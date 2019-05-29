@@ -12,13 +12,12 @@
 void* threadFunction(void* arg);
 void* respondRequisitions(void* arg);
 
-int main(){
-    //Inicializa os buffers de resposta e requisição.
-    char response[512];
-    char request[512];
+char queue[50][512];
+int lastOnTheQueue;
 
-    int requisitionCount = 10;
-    char** fila;
+int main(){
+    //Inicializa o buffer de requisição.
+    char request[512];
 
     //Inicializa os sockets do c para o windows.
     WSADATA wsa;
@@ -89,19 +88,6 @@ int main(){
             printf("thread %d ended\n", j);
         }*/
 
-
-        
-
-        //Resposta do servidor (provisório para a entrega intermediária).
-        //printf("Enter the response string: ");
-
-        //int n = 0; 
-        //while ((response[n++] = getchar()) != '\n') ;
-
-        //Manda o buffer de resposta ao cliente.
-        //send(client, response, sizeof(response), 0);
-
-        //Fecha a conexão com o cliente.
         closesocket(client);
 
         printf("Request ended.\n");
@@ -121,6 +107,9 @@ void* threadFunction(void* arg){
 
 
 void* respondRequisitions(void* arg){
+    pthread_t threads[10];
+    int usedThreads[10];
+
     pthread_t thread;
     int x = 1;
     pthread_create(&thread, NULL, threadFunction, &x);
