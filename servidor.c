@@ -14,8 +14,16 @@ void* respondRequisitions(void* arg);
 
 char queue[50][512];
 int lastOnTheQueue;
+int usedThreads[10];
 
 int main(){
+
+    int init;
+    for(init=0; init<10; init++){
+        usedThreads[init] = 0;
+    }
+
+    lastOnTheQueue = 0;
     //Inicializa o buffer de requisição.
     char request[512];
 
@@ -71,9 +79,11 @@ int main(){
         while(1){
             //Recebe e printa na tela os bytes da requisição do cliente.
             x = recv(client, request, sizeof request, 0);
-            printf("Request message: %s", request, x);
+            //printf("Request message: %s", request, x);
             if(x<1) break;
+            strcpy(queue[lastOnTheQueue++], request);
         }
+
         pthread_t thread[10];
         int num[10];
         int threadCreated;
@@ -101,19 +111,31 @@ int main(){
 void* threadFunction(void* arg){
     int *k = (int*) arg;
     int j = *k;
-    sleep(10*j);
-    printf("THREAD TERMINADA");
+    sleep(10);
+    usedThreads[j] = 0;
 }
 
 
 void* respondRequisitions(void* arg){
     pthread_t threads[10];
-    int usedThreads[10];
+    char localQueue[50][512];
+    char localLastOnTheQueue = 0;
 
-    pthread_t thread;
-    int x = 1;
-    pthread_create(&thread, NULL, threadFunction, &x);
     while(1){
+        if(lastOnTheQueue > 0){
+            while(lastOnTheQueue > 0)
+                strcpy(localQueue[localLastOnTheQueue++], queue[lastOnTheQueue--]);
+        }
+        while(existeThreadDisponível() == 1){
 
+        }
     }
+}
+
+int existeThreadDisponível(){
+    int i = 0;
+    for(int i = 0; i < 10; i++){
+        if(usedThreads[i] == 0) return 1;
+    }
+    return 0;
 }

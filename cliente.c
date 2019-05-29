@@ -8,7 +8,7 @@
 #include <stdlib.h>
 
 #define PORT 5000
-#define MAX_REQUISITIONS 5
+#define MAX_REQUISITIONS 1
 
 int main(){
     //Inicializa o buffer de requisição.
