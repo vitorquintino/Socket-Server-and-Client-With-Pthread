@@ -6,11 +6,19 @@
 #include <windows.h>
 #include <ws2tcpip.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <pthread.h>
+
+void* threadFunction(void* arg);
+void* respondRequisitions(void* arg);
 
 int main(){
     //Inicializa os buffers de resposta e requisição.
     char response[512];
     char request[512];
+
+    int requisitionCount = 10;
+    char** fila;
 
     //Inicializa os sockets do c para o windows.
     WSADATA wsa;
@@ -43,8 +51,12 @@ int main(){
     //Deixa o servidor "ouvindo" as requisições.
     listen(server, 5);
 
+    pthread_t thread;
+    pthread_create(&thread, NULL, respondRequisitions, NULL);
+
     //Loop infinito para aceitar requisições.
     while(1){
+        printf("Started accepting requests.\n");
         //Zera o buffer para que em cada requisição se tenha um buffer novo.
         memset(request, 0, 512);
 
@@ -57,18 +69,37 @@ int main(){
         else{
             printf("Request accepted!\n");
         }
-        //Recebe e printa na tela os bytes da requisição do cliente.
-        x = recv(client, request, sizeof request, 0);
-        printf("Request message: %s", request);
+        while(1){
+            //Recebe e printa na tela os bytes da requisição do cliente.
+            x = recv(client, request, sizeof request, 0);
+            printf("Request message: %s", request, x);
+            if(x<1) break;
+        }
+        pthread_t thread[10];
+        int num[10];
+        int threadCreated;
+
+        /*int j = 0;
+        for(j = 0; j < 10; j++){
+            num[j] = j;
+            threadCreated = pthread_create(&thread[j], NULL, threadFunction, &num[j]);
+        }
+        for(j = 0; j < 10; j++){
+            pthread_join(thread[j], NULL);
+            printf("thread %d ended\n", j);
+        }*/
+
+
+        
 
         //Resposta do servidor (provisório para a entrega intermediária).
-        printf("Enter the response string: ");
+        //printf("Enter the response string: ");
 
-        int n = 0; 
-        while ((response[n++] = getchar()) != '\n') ;
+        //int n = 0; 
+        //while ((response[n++] = getchar()) != '\n') ;
 
         //Manda o buffer de resposta ao cliente.
-        send(client, response, sizeof(response), 0);
+        //send(client, response, sizeof(response), 0);
 
         //Fecha a conexão com o cliente.
         closesocket(client);
@@ -77,4 +108,23 @@ int main(){
     }
 
 	return 0;
+}
+
+
+
+void* threadFunction(void* arg){
+    int *k = (int*) arg;
+    int j = *k;
+    sleep(10*j);
+    printf("THREAD TERMINADA");
+}
+
+
+void* respondRequisitions(void* arg){
+    pthread_t thread;
+    int x = 1;
+    pthread_create(&thread, NULL, threadFunction, &x);
+    while(1){
+
+    }
 }

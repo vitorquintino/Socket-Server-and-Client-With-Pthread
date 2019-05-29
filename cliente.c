@@ -8,6 +8,7 @@
 #include <stdlib.h>
 
 #define PORT 5000
+#define MAX_REQUISITIONS 5
 
 int main(){
     //Inicializa o buffer de requisição.
@@ -35,24 +36,30 @@ int main(){
     servaddr.sin_addr.s_addr = inet_addr("127.0.0.1"); 
     servaddr.sin_port = htons(PORT); 
 
-    //Conecta o cliente ao servidor.
-    connect(client, (struct sockaddr *)&servaddr, sizeof(servaddr));
+    int i = 0;
+    while(i++ < MAX_REQUISITIONS){
+        //Conecta o cliente ao servidor.
+        connect(client, (struct sockaddr *)&servaddr, sizeof(servaddr));
 
-    //Faz o cliente inserir a requisição.
-    printf("Enter the request string: ");
+        //Faz o cliente inserir a requisição.
+        printf("Enter the request string: ");
 
-    n = 0; 
-    while ((request[n++] = getchar()) != '\n') ;
+        n = 0; 
+        while ((request[n++] = getchar()) != '\n') ;
 
-    //Manda sua requisição ao servidor.
-    send(client, request, (int)strlen(request), 0);
-    printf("Request sent!\n");
-    
-    //Zera o buffer.
-    memset(request, 0, 512);
+        int i = 0;
+        while(i<5){
+            //Manda sua requisição ao servidor.
+            send(client, request, (int)strlen(request), 0);
+            printf("Request sent!\n");
+            i++;
+        }
+        //Zera o buffer.
+        memset(request, 0, 512);
 
-    //Recebe a resposta do servidor.
-    int x = recv(client, request, sizeof request, 0);
-    
-    printf("Servidor: %s", request);
+        //Recebe a resposta do servidor.
+        //int x = recv(client, request, sizeof request, 0);
+        close(client);
+        //printf("Servidor: %s", request);
+    }
 }
