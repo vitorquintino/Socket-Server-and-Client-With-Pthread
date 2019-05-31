@@ -48,7 +48,7 @@ int main(){
         while ((request[n++] = getchar()) != '\n') ;
 
         int i = 0;
-        while(i<5){
+        while(i<12){
             //Manda sua requisição ao servidor.
             send(client, request, (int)strlen(request), 0);
             printf("Request sent!\n");

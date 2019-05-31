@@ -9,12 +9,15 @@
 #include <unistd.h>
 #include <pthread.h>
 
-void* threadFunction(void* arg);
+void* requisitionResponder(void* arg);
 void* respondRequisitions(void* arg);
+int threadAvailable();
+int getAvailableThread();
 
 char queue[50][512];
 int lastOnTheQueue;
 int usedThreads[10];
+int queueResourceAvailable;
 
 int main(){
 
@@ -76,17 +79,22 @@ int main(){
         else{
             printf("Request accepted!\n");
         }
+
+        queueResourceAvailable = 1;
         while(1){
             //Recebe e printa na tela os bytes da requisição do cliente.
             x = recv(client, request, sizeof request, 0);
             //printf("Request message: %s", request, x);
             if(x<1) break;
-            strcpy(queue[lastOnTheQueue++], request);
+            strncpy(queue[lastOnTheQueue++], request, strlen(request) - 1);
         }
+        queueResourceAvailable = 0;
 
-        pthread_t thread[10];
-        int num[10];
-        int threadCreated;
+        printf("%d\n", lastOnTheQueue);
+        /*int j;
+        for(j = 0; j < lastOnTheQueue; j++){
+                printf("%s\n", queue[j]);
+        }*/
 
         /*int j = 0;
         for(j = 0; j < 10; j++){
@@ -108,7 +116,7 @@ int main(){
 
 
 
-void* threadFunction(void* arg){
+void* requisitionResponder(void* arg){
     int *k = (int*) arg;
     int j = *k;
     sleep(10);
@@ -122,20 +130,46 @@ void* respondRequisitions(void* arg){
     char localLastOnTheQueue = 0;
 
     while(1){
-        if(lastOnTheQueue > 0){
-            while(lastOnTheQueue > 0)
-                strcpy(localQueue[localLastOnTheQueue++], queue[lastOnTheQueue--]);
-        }
-        while(existeThreadDisponível() == 1){
+        if(lastOnTheQueue > 0 && queueResourceAvailable == 0){
+            while(lastOnTheQueue > 0){
+                lastOnTheQueue--;
+                strcpy(localQueue[localLastOnTheQueue], queue[lastOnTheQueue]);
+                localLastOnTheQueue++;
+            }
+
+            int j = 0;
+            for(j = 0; j < localLastOnTheQueue; j++){
+                printf("%s\n", localQueue[j]);
+            }
 
         }
+        /*while(threadAvailable() == 1){
+            if(localLastOnTheQueue > 0){
+                int threadNumber = getAvailableThread();
+                if(threadNumber > -1){
+
+                }
+                //else feito apenas para teste
+                else{
+                    printf("All threads are being used");
+                }
+            }
+        }*/
     }
 }
 
-int existeThreadDisponível(){
+int threadAvailable(){
     int i = 0;
     for(int i = 0; i < 10; i++){
         if(usedThreads[i] == 0) return 1;
     }
     return 0;
+}
+
+int getAvailableThread(){
+    int i = 0;
+    for(int i = 0; i < 10; i++){
+        if(usedThreads[i] == 0) return i;
+    }
+    return -1;
 }
