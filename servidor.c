@@ -117,10 +117,12 @@ int main(){
 
 
 void* requisitionResponder(void* arg){
-    int *k = (int*) arg;
-    int j = *k;
-    sleep(10);
-    usedThreads[j] = 0;
+    printf("Entered thread");
+    //int *k = (int*) arg;
+    //int j = *k;
+    //sleep(1);
+    //usedThreads[j] = 0;
+    //printf("Thread %d terminated", j);
 }
 
 
@@ -128,6 +130,8 @@ void* respondRequisitions(void* arg){
     pthread_t threads[10];
     char localQueue[50][512];
     char localLastOnTheQueue = 0;
+    pthread_t th;
+    pthread_create(&th, NULL, requisitionResponder, NULL);
 
     while(1){
         if(lastOnTheQueue > 0 && queueResourceAvailable == 0){
@@ -136,25 +140,28 @@ void* respondRequisitions(void* arg){
                 strcpy(localQueue[localLastOnTheQueue], queue[lastOnTheQueue]);
                 localLastOnTheQueue++;
             }
-
-            int j = 0;
-            for(j = 0; j < localLastOnTheQueue; j++){
-                printf("%s\n", localQueue[j]);
-            }
-
         }
-        /*while(threadAvailable() == 1){
+
+        while(threadAvailable() == 1){
             if(localLastOnTheQueue > 0){
                 int threadNumber = getAvailableThread();
                 if(threadNumber > -1){
-
+                    int* threadAllocated = malloc(sizeof(*threadAllocated));
+                    *threadAllocated = threadNumber;
+                    printf("%d", threadNumber);
+                    pthread_t auxThread = threads[threadNumber];
+                    pthread_create(&auxThread, NULL, requisitionResponder, NULL);
+                    usedThreads[threadNumber] = 1;
                 }
                 //else feito apenas para teste
                 else{
                     printf("All threads are being used");
                 }
             }
-        }*/
+            else{
+                break;
+            }
+        }
     }
 }
 
