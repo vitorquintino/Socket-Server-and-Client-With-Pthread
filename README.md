@@ -5,5 +5,5 @@ Para compilar, é necessário ter instalado um compilador C (por exemplo o mingw
 Na pasta do arquivo, digite: gcc servidor.c -o servidor -lws2_32 -pthread 
 Após o comando acima, digite:  servidor
 Com isso, o servidor estará de pé. Agora, temos que compilar o cliente:
-gcc cliente.c -o cliente -lpthread -lws2_32
+gcc cliente.c -o cliente -lws2_32
 Após o comando acima, digite: cliente
