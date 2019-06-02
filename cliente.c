@@ -44,9 +44,11 @@ int main(){
         //Faz o cliente inserir a requisição.
         printf("Enter the request string: ");
 
+        //Coloca o texto de requisição no buffer.
         n = 0; 
         while ((request[n++] = getchar()) != '\n') ;
 
+        //Manda um número arbitrário de requisições (todas iguais) ao servidor. Nesse caso, são 12.
         int i = 0;
         while(i<12){
             //Manda sua requisição ao servidor.
@@ -57,9 +59,7 @@ int main(){
         //Zera o buffer.
         memset(request, 0, 512);
 
-        //Recebe a resposta do servidor.
-        //int x = recv(client, request, sizeof request, 0);
+        //Fecha a conexão com o servidor.
         close(client);
-        //printf("Servidor: %s", request);
     }
 }

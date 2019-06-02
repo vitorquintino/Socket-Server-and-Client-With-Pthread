@@ -27,17 +27,20 @@ int lastOnTheQueue;
 //Marca quais das 10 threads estão sendo utilizadas. 0-> não está sendo utilizada. 1-> está sendo utilizada.
 int usedThreads[10];
 
-//Variável do semáforo.
+//Variável do semáforo 0-> recurso disponível. 1-> recurso indisponível.
 int queueResourceAvailable;
 
 int main(){
 
+    //Inicializa a variável das threads como 0;
     int init;
     for(init=0; init<10; init++){
         usedThreads[init] = 0;
     }
 
+    //Inicializa a variável que marca a última requisição como 0.
     lastOnTheQueue = 0;
+    
     //Inicializa o buffer de requisição.
     char request[512];
 
@@ -144,44 +147,52 @@ void* requisitionResponder(void* arg){
 
 
 void* respondRequisitions(void* arg){
+    //Guarda as threads utilizadas para responder as requisições.
     pthread_t threads[10];
+
+    //Variáveis de fila local.
     char localQueue[50][512];
     char localLastOnTheQueue = 0;
 
     while(1){
+        //If utilizado para copiar as requisições da fila global para a fila local.
         if(lastOnTheQueue > 0 && queueResourceAvailable == 0){
             while(lastOnTheQueue > 0){
                 lastOnTheQueue--;
+
+                //Copia da fila global para a fila local.
                 strcpy(localQueue[localLastOnTheQueue], queue[lastOnTheQueue]);
                 localLastOnTheQueue++;
             }
-            printf("%d\n", localLastOnTheQueue);
         }
         
-
+        //If utilizado para se tiver uma thread disponível, alocar uma requisição para uma thread.
         if(threadAvailable() == 1){
+
+            //If utilizado para só prosseguir se tiver alguma requisição pendente na fila local.
             if(localLastOnTheQueue > 0){
                 int threadNumber = getAvailableThread();
                 if(threadNumber > -1){
+                    //Aloca um espaço de memória para o número da thread, para que o número não se perca.
                     int* threadAllocated = malloc(sizeof(*threadAllocated));
                     *threadAllocated = threadNumber;
 
-                    struct requisitionArgs* args = malloc(sizeof(struct requisitionArgs));
+                    //Aloca um espaço de memória para o struct e inicializa suas variáveis, que serão passadas à função da thread.
+                    struct requisitionArgs* args = malloc(sizeof(struct requisitionArgs));  
                     args->requisition = localQueue[--localLastOnTheQueue];
                     args->threadNumber = *threadAllocated;
-                    //strcpy(args->requisition, requestText);
 
+                    //Cria a thread que efetivamente vai processar a requisição.
                     pthread_t auxThread = threads[threadNumber];
                     pthread_create(&auxThread, NULL, requisitionResponder, args);
                     usedThreads[threadNumber] = 1;
-
                 }
-                
             }
         }
     }
 }
 
+//Método que retorna 1 se tiver alguma thread disponível e 0 se não tiver nenhuma thread disponível.
 int threadAvailable(){
     int i = 0;
     for(int i = 0; i < 10; i++){
@@ -190,6 +201,7 @@ int threadAvailable(){
     return 0;
 }
 
+//Método que retorna o número de uma thread disponível, ou -1 se nenhuma estiver disponível.
 int getAvailableThread(){
     int i = 0;
     for(int i = 0; i < 10; i++){
