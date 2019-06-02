@@ -14,9 +14,20 @@ void* respondRequisitions(void* arg);
 int threadAvailable();
 int getAvailableThread();
 
+//Struct dos argumentos passados a função de thread.
+struct requisitionArgs {
+    int threadNumber;
+    char* requisition;
+};
+
+//Variáveis da fila global, utilizada para armazenar as requisições até que a thread das pthreads as recolha para uma fila local.
 char queue[50][512];
 int lastOnTheQueue;
+
+//Marca quais das 10 threads estão sendo utilizadas. 0-> não está sendo utilizada. 1-> está sendo utilizada.
 int usedThreads[10];
+
+//Variável do semáforo.
 int queueResourceAvailable;
 
 int main(){
@@ -61,6 +72,7 @@ int main(){
     //Deixa o servidor "ouvindo" as requisições.
     listen(server, 5);
 
+    //Cria a thread que vai controlar as pthreads.
     pthread_t thread;
     pthread_create(&thread, NULL, respondRequisitions, NULL);
 
@@ -80,32 +92,26 @@ int main(){
             printf("Request accepted!\n");
         }
 
+        //Bloqueia o recurso das filas globais.
         queueResourceAvailable = 1;
         while(1){
             //Recebe e printa na tela os bytes da requisição do cliente.
             x = recv(client, request, sizeof request, 0);
-            //printf("Request message: %s", request, x);
+
+            //Sai do loop quando o cliente não envia mais nenhum byte de requisição.
             if(x<1) break;
+
+            //Coloca a requisição na fila global.
             strncpy(queue[lastOnTheQueue++], request, strlen(request) - 1);
+
+            //Coloca o valor do último char como o caracter especial de fim de strings, para que requisições anteriores não interfiram nas futuras.
+            int last = lastOnTheQueue - 1;
+            queue[last][strlen(request) - 1] = '\0';
         }
+        //Libera o recurso das filas globais.
         queueResourceAvailable = 0;
 
-        printf("%d\n", lastOnTheQueue);
-        /*int j;
-        for(j = 0; j < lastOnTheQueue; j++){
-                printf("%s\n", queue[j]);
-        }*/
-
-        /*int j = 0;
-        for(j = 0; j < 10; j++){
-            num[j] = j;
-            threadCreated = pthread_create(&thread[j], NULL, threadFunction, &num[j]);
-        }
-        for(j = 0; j < 10; j++){
-            pthread_join(thread[j], NULL);
-            printf("thread %d ended\n", j);
-        }*/
-
+        //Fecha a conexão com o cliente.
         closesocket(client);
 
         printf("Request ended.\n");
@@ -117,12 +123,23 @@ int main(){
 
 
 void* requisitionResponder(void* arg){
-    printf("Entered thread");
-    //int *k = (int*) arg;
-    //int j = *k;
-    //sleep(1);
-    //usedThreads[j] = 0;
-    //printf("Thread %d terminated", j);
+    //Aloca os argumentos em uma variável local.
+    struct requisitionArgs* args = arg;
+
+    //Printa que entrou na thread.
+    printf("Entered thread %d %s\n", args->threadNumber, args->requisition);
+
+    //Dorme por 10 segundos ("processamento da requisição").
+    sleep(10);
+
+    //Printa que terminou o processamento da thread.
+    printf("Thread %d terminated\n", args->threadNumber);
+
+    //Libera o uso da thread.
+    usedThreads[args->threadNumber] = 0;
+
+    //Libera o espaço da memória dos argumentos.
+    free(args);
 }
 
 
@@ -130,8 +147,6 @@ void* respondRequisitions(void* arg){
     pthread_t threads[10];
     char localQueue[50][512];
     char localLastOnTheQueue = 0;
-    pthread_t th;
-    pthread_create(&th, NULL, requisitionResponder, NULL);
 
     while(1){
         if(lastOnTheQueue > 0 && queueResourceAvailable == 0){
@@ -140,26 +155,28 @@ void* respondRequisitions(void* arg){
                 strcpy(localQueue[localLastOnTheQueue], queue[lastOnTheQueue]);
                 localLastOnTheQueue++;
             }
+            printf("%d\n", localLastOnTheQueue);
         }
+        
 
-        while(threadAvailable() == 1){
+        if(threadAvailable() == 1){
             if(localLastOnTheQueue > 0){
                 int threadNumber = getAvailableThread();
                 if(threadNumber > -1){
                     int* threadAllocated = malloc(sizeof(*threadAllocated));
                     *threadAllocated = threadNumber;
-                    printf("%d", threadNumber);
+
+                    struct requisitionArgs* args = malloc(sizeof(struct requisitionArgs));
+                    args->requisition = localQueue[--localLastOnTheQueue];
+                    args->threadNumber = *threadAllocated;
+                    //strcpy(args->requisition, requestText);
+
                     pthread_t auxThread = threads[threadNumber];
-                    pthread_create(&auxThread, NULL, requisitionResponder, NULL);
+                    pthread_create(&auxThread, NULL, requisitionResponder, args);
                     usedThreads[threadNumber] = 1;
+
                 }
-                //else feito apenas para teste
-                else{
-                    printf("All threads are being used");
-                }
-            }
-            else{
-                break;
+                
             }
         }
     }
