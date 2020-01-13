@@ -1,5 +1,5 @@
 # Socket Server and Client With Pthreads
-Este repositório foi feito como EP1 da matéria de DSID
+Este repositório foi feito como EP1 da matéria de Desenvolvimento de Sistemas Distribuídos.
 
 O cliente faz uma série de requisições ao servidor, que as responde criando um número limitado de pthreads. A medida que as requisições vão terminando, se houver uma nova requisição na fila, ela é alocado na pthread recém liberada.
 
